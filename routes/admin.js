@@ -24,6 +24,8 @@ router.get("/allnotes", fetchadmin, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+//get all users//
 router.get("/allusers", fetchadmin, async (req, res) => {
   try {
     const users = await User.find({}, "name email Date");
@@ -33,6 +35,7 @@ router.get("/allusers", fetchadmin, async (req, res) => {
   }
 });
 
+//get notes by user id//
 router.get("/notes/:userId", fetchadmin, async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -48,6 +51,7 @@ router.get("/notes/:userId", fetchadmin, async (req, res) => {
   }
 });
 
+// get only notes//
 router.get("/onlynotes", fetchadmin, async (req, res) => {
   try {
     const notes = await Note.find();
@@ -286,6 +290,8 @@ router.put(
     }
   }
 );
+
+
 //alladmins //routes for master//
 router.get("/alladmins",  async (req, res) => {
   try {
@@ -308,7 +314,7 @@ router.get("/alladmins",  async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
-
+//delete admin by id//
 router.delete("/deleteadmin/:adminId",  async (req, res) => {
   const adminId = req.params.adminId;
 
@@ -380,6 +386,32 @@ router.get("/myinfo", fetchadmin, async (req, res) => {
     }
 
     // Prepare response JSON with array of info records including title, description, and date
+    const response = info.map(item => ({
+      title: item.title,
+      description: item.description,
+      date: item.Date,
+    }));
+
+    res.json(response);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Fetch admin info by ID without using fetchadmin middleware
+router.get("/admininfo/:adminId", async (req, res) => {
+  try {
+    const adminId = req.params.adminId;
+
+    // Find the corresponding Info documents for the admin
+    const info = await Info.find({ user: adminId }).select("title description Date");
+
+    if (!info || info.length === 0) {
+      return res.status(404).json({ error: "Info not found for the admin" });
+    }
+
+    // Prepare response JSON with an array of info records including title, description, and date
     const response = info.map(item => ({
       title: item.title,
       description: item.description,
