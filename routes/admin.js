@@ -4,6 +4,7 @@ const Note = require("../models/Note");
 const User = require("../models/User");
 const Admin = require("../models/Admin");
 const Info = require("../models/Info"); //importing the Info model schema
+const UserNotice = require("../models/UserNotice");
 const { body, validationResult } = require("express-validator");
 const multer = require('multer');
 const bcrypt = require("bcryptjs");
@@ -13,6 +14,7 @@ var jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const AdminNotice = require("../models/AdminNotice");
 var fetchadmin = require("../middleware/fetchadmin");
 
 //get all notes//
@@ -419,6 +421,92 @@ router.get("/admininfo/:adminId", async (req, res) => {
     }));
 
     res.json(response);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create AdminNotice
+router.post(
+  "/adminnotice",
+  [
+    body("title").isLength({ min: 3 }).withMessage("Title must be at least 3 characters long"),
+    body("description").isLength({ min: 5 }).withMessage("Description must be at least 5 characters long"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const { title, description } = req.body;
+
+      const adminNotice = new AdminNotice({
+        title,
+        description,
+      });
+
+      await adminNotice.save();
+
+      res.json({ message: "Admin Notice created successfully" });
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Get all AdminNotices //
+router.get("/adminnotices", async (req, res) => {
+  try {
+    const adminNotices = await AdminNotice.find({});
+    adminNotices.sort((a, b) => b.date - a.date);
+    res.json(adminNotices);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post(
+  "/usernotice",
+  [
+    body("title").isLength({ min: 3 }).withMessage("Title must be at least 3 characters long"),
+    body("description").isLength({ min: 5 }).withMessage("Description must be at least 5 characters long"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const { title, description } = req.body;
+
+      const userNotice = new UserNotice({
+        title,
+        description,
+      });
+
+      await userNotice.save();
+
+      res.json({ message: "User Notice created successfully" });
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+//get all user notices//
+router.get("/allnotices", async (req, res) => {
+  try {
+    const userNotices = await UserNotice.find({}).select("title description date");
+
+    // Sort user notices by date in descending order
+    userNotices.sort((a, b) => b.date - a.date);
+
+    res.json(userNotices);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Internal Server Error" });
